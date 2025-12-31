@@ -36,10 +36,12 @@ Thumbs.db
 *~
 
 # Prisma
-prisma/migrations/*
-!prisma/migrations/migration_lock.toml
+# Note: Migration files should be committed to version control
+# See: https://www.prisma.io/docs/orm/prisma-migrate/understanding-prisma-migrate/migration-histories
 prisma/dev.db
 prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
 
 # Database
 data/
