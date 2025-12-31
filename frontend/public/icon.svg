@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Scheduler app icon">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bg" x1="96" y1="64" x2="416" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1E40AF"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0B1B4A" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect x="44" y="44" width="424" height="424" rx="96" fill="url(#bg)"/>
+
+  <!-- Calendar card -->
+  <g filter="url(#shadow)">
+    <rect x="120" y="136" width="272" height="252" rx="44" fill="#FFFFFF" opacity="0.96"/>
+    <rect x="120" y="136" width="272" height="72" rx="44" fill="#E5EEFF"/>
+    <rect x="120" y="180" width="272" height="28" fill="#E5EEFF"/>
+    <!-- Rings -->
+    <rect x="168" y="112" width="28" height="56" rx="14" fill="#FFFFFF"/>
+    <rect x="316" y="112" width="28" height="56" rx="14" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Calendar grid dots -->
+  <g opacity="0.55" fill="#1D4ED8">
+    <!-- 4x3 grid -->
+    <circle cx="178" cy="250" r="9"/>
+    <circle cx="230" cy="250" r="9"/>
+    <circle cx="282" cy="250" r="9"/>
+    <circle cx="334" cy="250" r="9"/>
+
+    <circle cx="178" cy="304" r="9"/>
+    <circle cx="230" cy="304" r="9"/>
+    <circle cx="282" cy="304" r="9"/>
+    <circle cx="334" cy="304" r="9"/>
+
+    <circle cx="178" cy="358" r="9"/>
+    <circle cx="230" cy="358" r="9"/>
+    <circle cx="282" cy="358" r="9"/>
+    <circle cx="334" cy="358" r="9"/>
+  </g>
+
+  <!-- Clock badge -->
+  <g>
+    <circle cx="352" cy="336" r="64" fill="#F59E0B"/>
+    <circle cx="352" cy="336" r="50" fill="#FFFFFF" opacity="0.96"/>
+    <circle cx="352" cy="336" r="6" fill="#F59E0B"/>
+    <path d="M352 304 V336 L378 352" stroke="#F59E0B" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

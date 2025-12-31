@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-workplace_scheduler}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    container_name: workplace-scheduler-postgres
+    networks:
+      - scheduler-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/workplace_scheduler?schema=public}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-this-in-production}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-7d}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    container_name: workplace-scheduler-backend
+    networks:
+      - scheduler-network
+    command: sh -c "npx prisma migrate deploy && node dist/src/main"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    restart: unless-stopped
+    container_name: workplace-scheduler-frontend
+    networks:
+      - scheduler-network
+
+volumes:
+  postgres-data:
+
+networks:
+  scheduler-network:
+    driver: bridge
