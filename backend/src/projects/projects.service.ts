@@ -71,8 +71,8 @@ export class ProjectsService {
   async update(id: string, updateProjectDto: UpdateProjectDto) {
     await this.findOne(id); // Check if project exists
 
-    // Delete all existing user associations
-    if (updateProjectDto.userIds) {
+    // Delete all existing user associations if userIds is provided (including empty array)
+    if (updateProjectDto.userIds !== undefined) {
       await this.prisma.projectUser.deleteMany({
         where: { projectId: id },
       });
@@ -82,7 +82,7 @@ export class ProjectsService {
       where: { id },
       data: {
         ...(updateProjectDto.name && { name: updateProjectDto.name }),
-        ...(updateProjectDto.userIds && {
+        ...(updateProjectDto.userIds !== undefined && {
           users: {
             create: updateProjectDto.userIds.map((userId) => ({
               user: {

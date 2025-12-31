@@ -133,7 +133,7 @@ export const loadProjects = async (): Promise<Project[]> => {
     return projects.map((p: any) => ({
       id: p.id,
       name: p.name,
-      userIds: p.users?.map((u: any) => u.id) || [],
+      userIds: p.users?.map((u: any) => u.userId) || [],
     }));
   } catch (error) {
     console.error("Failed to load projects from API:", error);

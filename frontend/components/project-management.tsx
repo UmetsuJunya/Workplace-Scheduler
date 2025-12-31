@@ -31,7 +31,7 @@ export function ProjectManagement({ projects, users, onProjectsChange, onClose }
       onProjectsChange([...projects, {
         id: newProject.id,
         name: newProject.name,
-        userIds: newProject.users?.map((u: any) => u.id) || [],
+        userIds: newProject.users?.map((u: any) => u.userId) || [],
       }])
       setNewProjectName("")
       setSelectedUserIds(new Set())
@@ -65,7 +65,7 @@ export function ProjectManagement({ projects, users, onProjectsChange, onClose }
         p.id === editingProject.id ? {
           id: updatedProject.id,
           name: updatedProject.name,
-          userIds: updatedProject.users?.map((u: any) => u.id) || [],
+          userIds: updatedProject.users?.map((u: any) => u.userId) || [],
         } : p,
       )
 
