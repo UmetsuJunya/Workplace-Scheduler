@@ -5,7 +5,7 @@
 import type { MonthData, Project, User, CellValue } from "./types";
 import { apiClient } from "./api-client";
 
-export const saveMonthData = async (yearMonth: string, data: MonthData): Promise<void> => {
+export const saveMonthData = async (yearMonth: string, data: MonthData, currentUserId?: string): Promise<void> => {
   try {
     // Get valid user IDs from the backend
     const validUsers = await apiClient.getUsers();
@@ -38,9 +38,15 @@ export const saveMonthData = async (yearMonth: string, data: MonthData): Promise
     const newScheduleKeys = new Set<string>();
 
     // Convert MonthData to schedules array, but only for valid users
+    // If currentUserId is provided (non-admin user), only save their schedules
     Object.entries(data.entries).forEach(([userId, userEntries]) => {
       // Skip if user doesn't exist in backend
       if (!validUserIds.has(userId)) {
+        return;
+      }
+
+      // If currentUserId is provided, only process that user's schedules
+      if (currentUserId && userId !== currentUserId) {
         return;
       }
 
@@ -61,10 +67,14 @@ export const saveMonthData = async (yearMonth: string, data: MonthData): Promise
     });
 
     // Find schedules that exist in backend but not in new data (these should be deleted)
+    // If currentUserId is provided, only delete that user's schedules
     const schedulesToDelete: string[] = [];
     existingScheduleMap.forEach((schedule, key) => {
       if (!newScheduleKeys.has(key)) {
-        schedulesToDelete.push(schedule.id);
+        // If currentUserId is provided, only delete if it's the current user's schedule
+        if (!currentUserId || schedule.userId === currentUserId) {
+          schedulesToDelete.push(schedule.id);
+        }
       }
     });
 
@@ -112,7 +122,7 @@ export const loadMonthData = async (yearMonth: string): Promise<MonthData | null
     });
 
     return {
-      users: users.map((u: any) => ({ id: u.id, name: u.name })),
+      users: users.map((u: any) => ({ id: u.id, name: u.name, email: u.email, role: u.role })),
       entries,
     };
   } catch (error) {
@@ -149,7 +159,7 @@ export const saveUsers = async (users: User[]): Promise<void> => {
 export const loadUsers = async (): Promise<User[]> => {
   try {
     const users = await apiClient.getUsers();
-    return users.map((u: any) => ({ id: u.id, name: u.name }));
+    return users.map((u: any) => ({ id: u.id, name: u.name, role: u.role }));
   } catch (error) {
     console.error("Failed to load users from API:", error);
     return [];

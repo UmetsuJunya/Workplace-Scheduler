@@ -23,7 +23,7 @@ class ApiClient {
     this.baseUrl = baseUrl;
     // Load token from localStorage if available
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token');
+      this.token = localStorage.getItem('access_token');
     }
   }
 
@@ -31,9 +31,9 @@ class ApiClient {
     this.token = token;
     if (typeof window !== 'undefined') {
       if (token) {
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('access_token', token);
       } else {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('access_token');
       }
     }
   }
@@ -51,8 +51,11 @@ class ApiClient {
       ...options.headers,
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Always get the latest token from localStorage
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : this.token;
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -78,12 +81,12 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async login(name: string, password: string) {
+  async login(emailOrName: string, password: string) {
     const data = await this.request<{ access_token: string; user: any }>(
       '/auth/login',
       {
         method: 'POST',
-        body: JSON.stringify({ name, password }),
+        body: JSON.stringify({ email: emailOrName, password }),
       }
     );
     this.setToken(data.access_token);
@@ -104,6 +107,10 @@ class ApiClient {
 
   logout() {
     this.setToken(null);
+  }
+
+  async canRegister() {
+    return this.request<{ canRegister: boolean }>('/auth/can-register');
   }
 
   // Users endpoints

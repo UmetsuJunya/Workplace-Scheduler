@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useEffect, useState, useRef } from "react"
-import { useAtom, useAtomValue } from 'jotai'
+import { useRouter } from "next/navigation"
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import type { CellValue, User, MonthData, Project } from "../lib/types"
 import { saveMonthData, loadMonthData, saveProjects, loadProjects, loadUsers } from "../lib/storage-adapter"
 import { formatYearMonth, formatDateISO, getDaysInMonth, getDayOfWeek, isWeekend } from "../lib/utils"
@@ -10,8 +11,11 @@ import { CellEditor } from "../components/cell-editor"
 import { UserManagement } from "../components/user-management"
 import { ProjectManagement } from "../components/project-management"
 import { LocationManagement } from "../components/location-management"
+import { ProfileEdit } from "../components/profile-edit"
 import { wsClient } from "../lib/websocket"
+import { apiClient } from "../lib/api-client"
 import {
+  currentUserAtom,
   currentDateAtom,
   usersAtom,
   entriesAtom,
@@ -35,9 +39,17 @@ import {
   selectedUserNameAtom,
   selectedProjectNameAtom,
   showLocationManagementAtom,
+  showProfileEditAtom,
+  forceEditModeAtom,
 } from "../lib/atoms"
 
 export default function Page() {
+  const router = useRouter()
+  const currentUser = useAtomValue(currentUserAtom)
+  const setCurrentUser = useSetAtom(currentUserAtom)
+  const AUTH_ENABLED = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true"
+  const isAdmin = !AUTH_ENABLED || currentUser?.role === 'ADMIN'
+
   const [currentDate, setCurrentDate] = useAtom(currentDateAtom)
   const [users, setUsers] = useAtom(usersAtom)
   const [entries, setEntries] = useAtom(entriesAtom)
@@ -50,11 +62,13 @@ export default function Page() {
   const [showProjectManagement, setShowProjectManagement] = useAtom(showProjectManagementAtom)
   const [editingCell, setEditingCell] = useAtom(editingCellAtom)
   const [showUserManagement, setShowUserManagement] = useAtom(showUserManagementAtom)
+  const [showProfileEdit, setShowProfileEdit] = useAtom(showProfileEditAtom)
   const [bulkEditMode, setBulkEditMode] = useAtom(bulkEditModeAtom)
   const [selectedUser, setSelectedUser] = useAtom(selectedUserAtom)
   const [selectedDates, setSelectedDates] = useAtom(selectedDatesAtom)
   const [showBulkEditor, setShowBulkEditor] = useAtom(showBulkEditorAtom)
   const [showLocationManagement, setShowLocationManagement] = useAtom(showLocationManagementAtom)
+  const [forceEditMode, setForceEditMode] = useAtom(forceEditModeAtom)
 
   const year = useAtomValue(yearAtom)
   const month = useAtomValue(monthAtom)
@@ -208,7 +222,9 @@ export default function Page() {
       entries: newEntries,
     }
 
-    await saveMonthData(yearMonth, data)
+    // Non-admin users or admins not in force edit mode can only save their own schedules
+    const userIdToSave = (!isAdmin || !forceEditMode) && currentUser ? currentUser.id : undefined
+    await saveMonthData(yearMonth, data, userIdToSave)
 
     // Clear saving flag after a delay to ensure all WebSocket events from this save are processed
     setTimeout(() => {
@@ -220,6 +236,16 @@ export default function Page() {
   const handleProjectsChange = (newProjects: Project[]) => {
     setProjects(newProjects)
     saveProjects(newProjects)
+  }
+
+  const handleLogout = () => {
+    if (confirm("ログアウトしますか？")) {
+      localStorage.removeItem("access_token")
+      localStorage.removeItem("user_info")
+      apiClient.setToken(null)
+      setCurrentUser(null)
+      router.push("/login")
+    }
   }
 
   const handleUserSelect = (userId: string) => {
@@ -250,8 +276,16 @@ export default function Page() {
     if (bulkEditMode) {
       setSelectedUser(null)
       setSelectedDates(new Set())
+      setBulkEditMode(false)
+    } else {
+      // When entering bulk edit mode
+      // Non-admin users or admins not in force edit mode can only edit their own schedules
+      // But if AUTH is disabled, allow selecting any user
+      if (AUTH_ENABLED && (!isAdmin || !forceEditMode) && currentUser) {
+        setSelectedUser(currentUser.id)
+      }
+      setBulkEditMode(true)
     }
-    setBulkEditMode(!bulkEditMode)
   }
 
   const handleBulkEdit = () => {
@@ -307,6 +341,16 @@ export default function Page() {
   }
 
   const handleCellClick = (userId: string, dateISO: string, userName: string) => {
+    // Check if user can edit this schedule
+    // Non-admin users or admins not in force edit mode can only edit their own schedules
+    const canEdit = (!AUTH_ENABLED || !currentUser) ||
+                    (isAdmin && forceEditMode) ||
+                    userId === currentUser?.id
+
+    if (!canEdit) {
+      return // Silently ignore clicks on non-editable cells
+    }
+
     // 一括編集モード中で、かつ選択されたユーザーの場合は日付を選択/解除
     if (bulkEditMode && selectedUser === userId) {
       handleDateSelect(dateISO)
@@ -558,15 +602,17 @@ export default function Page() {
                   >
                     📁 プロジェクト管理
                   </button>
-                  <button
-                    onClick={() => {
-                      setShowUserManagement(true)
-                      setShowManagementMenu(false)
-                    }}
-                    className="dropdown-item"
-                  >
-                    👤 ユーザー管理
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setShowUserManagement(true)
+                        setShowManagementMenu(false)
+                      }}
+                      className="dropdown-item"
+                    >
+                      👤 ユーザー管理
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowLocationManagement(true)
@@ -576,6 +622,45 @@ export default function Page() {
                   >
                     📍 勤務地管理
                   </button>
+                  {AUTH_ENABLED && isAdmin && (
+                    <button
+                      onClick={() => {
+                        setForceEditMode(!forceEditMode)
+                      }}
+                      className="dropdown-item"
+                      style={{
+                        borderTop: "1px solid #ddd",
+                        marginTop: "4px",
+                        paddingTop: "8px",
+                        backgroundColor: forceEditMode ? "#fef3c7" : "transparent"
+                      }}
+                    >
+                      {forceEditMode ? "🔓" : "🔒"} 強制変更モード{forceEditMode ? "（ON）" : ""}
+                    </button>
+                  )}
+                  {AUTH_ENABLED && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowProfileEdit(true)
+                          setShowManagementMenu(false)
+                        }}
+                        className="dropdown-item"
+                        style={{ borderTop: "1px solid #ddd", marginTop: "4px", paddingTop: "8px" }}
+                      >
+                        👤 プロフィール編集
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowManagementMenu(false)
+                          handleLogout()
+                        }}
+                        className="dropdown-item"
+                      >
+                        🚪 ログアウト
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -588,8 +673,8 @@ export default function Page() {
             {selectedProjectName && <div className="status-item status-project">📁 {selectedProjectName}</div>}
             {bulkEditMode && (
               <div className="status-item status-edit">
-                {!selectedUser && "① ユーザー名をクリックして選択"}
-                {selectedUser && selectedDates.size === 0 && `② ${selectedUserName} のスケジュール枠をクリックして日付を選択`}
+                {!selectedUser && (!AUTH_ENABLED || (isAdmin && forceEditMode)) && "① ユーザー名をクリックして選択"}
+                {selectedUser && selectedDates.size === 0 && `${(!AUTH_ENABLED || (isAdmin && forceEditMode)) ? '② ' : ''}${selectedUserName} のスケジュール枠をクリックして日付を選択`}
                 {selectedUser && selectedDates.size > 0 && (
                   <>
                     {selectedUserName} | {selectedDates.size}日選択中
@@ -682,17 +767,23 @@ export default function Page() {
                   const canDrop = draggedEntry?.userId === user.id && !bulkEditMode
                   const isSelectableInBulkMode = bulkEditMode && selectedUser === user.id
 
+                  // Check if this cell is editable by the current user
+                  const canEdit = (!AUTH_ENABLED || !currentUser) ||
+                                  (isAdmin && forceEditMode) ||
+                                  user.id === currentUser?.id
+
                   return (
                     <div
                       key={dateISO}
-                      draggable={!!content && !bulkEditMode}
-                      onDragStart={(e) => cellValue && handleCellDragStart(e, user.id, dateISO, cellValue)}
-                      onDragOver={(e) => handleCellDragOver(e, user.id, dateISO)}
+                      draggable={!!content && !bulkEditMode && canEdit}
+                      onDragStart={(e) => cellValue && canEdit && handleCellDragStart(e, user.id, dateISO, cellValue)}
+                      onDragOver={(e) => canEdit && handleCellDragOver(e, user.id, dateISO)}
                       onDragLeave={handleCellDragLeave}
-                      onDrop={(e) => handleCellDrop(e, user.id, dateISO)}
+                      onDrop={(e) => canEdit && handleCellDrop(e, user.id, dateISO)}
                       onDragEnd={handleCellDragEnd}
-                      className={`grid-cell day-column ${weekend ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""}`}
+                      className={`grid-cell day-column ${weekend ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""} ${!canEdit ? "non-editable" : ""}`}
                       onClick={() => handleCellClick(user.id, dateISO, user.name)}
+                      style={{ cursor: canEdit ? "pointer" : "default" }}
                       title={
                         bulkEditMode
                           ? selectedUser === user.id
@@ -761,6 +852,10 @@ export default function Page() {
 
       {showLocationManagement && (
         <LocationManagement onClose={() => setShowLocationManagement(false)} />
+      )}
+
+      {showProfileEdit && (
+        <ProfileEdit onClose={() => setShowProfileEdit(false)} />
       )}
     </div>
   )

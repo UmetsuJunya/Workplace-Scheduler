@@ -1,6 +1,18 @@
 import { atom } from 'jotai'
 import type { CellValue, User, Project, LocationPreset } from './types'
 
+// Current user info (from localStorage)
+// Initialize from localStorage, but can be updated
+const getUserFromStorage = () => {
+  if (typeof window === 'undefined') return null
+  const userInfo = localStorage.getItem('user_info')
+  return userInfo ? JSON.parse(userInfo) : null
+}
+
+export const currentUserAtom = atom<{ id: string; name: string; email?: string; role: string } | null>(
+  getUserFromStorage()
+)
+
 // Current date for calendar
 export const currentDateAtom = atom(new Date())
 
@@ -48,11 +60,17 @@ export const showUserManagementAtom = atom(false)
 // Show/hide location management modal
 export const showLocationManagementAtom = atom(false)
 
+// Show/hide profile edit modal
+export const showProfileEditAtom = atom(false)
+
 // Bulk edit mode state
 export const bulkEditModeAtom = atom(false)
 export const selectedUserAtom = atom<string | null>(null)
 export const selectedDatesAtom = atom<Set<string>>(new Set())
 export const showBulkEditorAtom = atom(false)
+
+// Force edit mode for admins (allows editing other users' schedules)
+export const forceEditModeAtom = atom(false)
 
 // Derived atoms
 // Year and month from current date

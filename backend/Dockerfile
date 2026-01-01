@@ -17,6 +17,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# DATABASE_URLをビルド引数として受け取る（Prisma generate用）
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+
 # Prisma クライアントを生成
 RUN npx prisma generate
 

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
@@ -87,15 +87,20 @@ export class SchedulesService {
     return schedule;
   }
 
-  async update(id: string, updateScheduleDto: UpdateScheduleDto) {
-    await this.findOne(id); // Check if schedule exists
+  async update(id: string, updateScheduleDto: UpdateScheduleDto, user?: any) {
+    const schedule = await this.findOne(id); // Check if schedule exists
+
+    // Check ownership if user is provided and not an admin
+    if (user && user.role !== 'ADMIN' && schedule.userId !== user.userId) {
+      throw new ForbiddenException('You can only update your own schedules');
+    }
 
     const updateData: any = { ...updateScheduleDto };
     if (updateScheduleDto.date) {
       updateData.date = new Date(updateScheduleDto.date);
     }
 
-    const schedule = await this.prisma.schedule.update({
+    const updatedSchedule = await this.prisma.schedule.update({
       where: { id },
       data: updateData,
       include: {
@@ -103,12 +108,18 @@ export class SchedulesService {
       },
     });
 
-    this.eventsGateway.emitScheduleUpdated(schedule);
-    return schedule;
+    this.eventsGateway.emitScheduleUpdated(updatedSchedule);
+    return updatedSchedule;
   }
 
-  async remove(id: string) {
-    await this.findOne(id); // Check if schedule exists
+  async remove(id: string, user?: any) {
+    const schedule = await this.findOne(id); // Check if schedule exists
+
+    // Check ownership if user is provided and not an admin
+    if (user && user.role !== 'ADMIN' && schedule.userId !== user.userId) {
+      throw new ForbiddenException('You can only delete your own schedules');
+    }
+
     await this.prisma.schedule.delete({
       where: { id },
     });

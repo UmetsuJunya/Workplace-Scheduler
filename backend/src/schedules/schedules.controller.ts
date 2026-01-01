@@ -1,19 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, UseGuards, Request } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { OwnScheduleOrAdminGuard } from '../auth/guards/own-schedule-or-admin.guard';
 
 @Controller('schedules')
+@UseGuards(OptionalJwtAuthGuard)
 export class SchedulesController {
   constructor(private readonly schedulesService: SchedulesService) {}
 
   @Post()
-  create(@Body() createScheduleDto: CreateScheduleDto) {
+  @UseGuards(OwnScheduleOrAdminGuard)
+  create(@Body() createScheduleDto: CreateScheduleDto, @Request() req: any) {
     return this.schedulesService.create(createScheduleDto);
   }
 
   @Post('bulk')
-  bulkCreate(@Body() schedules: CreateScheduleDto[]) {
+  @UseGuards(OwnScheduleOrAdminGuard)
+  bulkCreate(@Body() schedules: CreateScheduleDto[], @Request() req: any) {
     return this.schedulesService.bulkCreate(schedules);
   }
 
@@ -36,13 +41,15 @@ export class SchedulesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateScheduleDto: UpdateScheduleDto) {
-    return this.schedulesService.update(id, updateScheduleDto);
+  @UseGuards(OwnScheduleOrAdminGuard)
+  update(@Param('id') id: string, @Body() updateScheduleDto: UpdateScheduleDto, @Request() req: any) {
+    return this.schedulesService.update(id, updateScheduleDto, req.user);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
-    return this.schedulesService.remove(id);
+  @UseGuards(OwnScheduleOrAdminGuard)
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.schedulesService.remove(id, req.user);
   }
 }

@@ -43,6 +43,43 @@ Workplace Schedulerは、チームメンバーの勤務地（オフィス、在�
 - Node.js v24.2.0
 - npm または Docker
 
+### 環境変数の設定
+
+#### Docker環境（推奨）
+
+**ルートディレクトリの `.env`** を編集してください：
+
+```bash
+# 認証機能を有効化
+AUTH_ENABLED=true
+NEXT_PUBLIC_AUTH_ENABLED=true
+
+# 認証機能を無効化（デフォルト）
+AUTH_ENABLED=false
+NEXT_PUBLIC_AUTH_ENABLED=false
+```
+
+#### ローカル開発環境
+
+**バックエンド**: `backend/.env.local` を作成（`backend/.env.local.example`をコピー）
+```bash
+cp backend/.env.local.example backend/.env.local
+# DATABASE_URL は localhost:5432 を使用
+```
+
+**フロントエンド**: `frontend/.env.local` を作成（`frontend/.env.local.example`をコピー）
+```bash
+cp frontend/.env.local.example frontend/.env.local
+```
+
+#### 環境変数ファイルの使用状況
+
+| ファイル | Docker環境 | ローカル開発 | 用途 |
+|---------|-----------|-------------|------|
+| **ルート `.env`** | ✅ 使用 | - | Docker Composeで使用 |
+| **backend/.env.local** | - | ✅ 使用 | バックエンドローカル開発 |
+| **frontend/.env.local** | - | ✅ 使用 | フロントエンドローカル開発 |
+
 ### ローカル開発環境のセットアップ
 
 #### Docker を使用した起動（推奨）

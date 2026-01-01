@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EventsGateway } from '../events/events.gateway';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -20,8 +21,15 @@ export class UsersService {
       throw new ConflictException('User with this name already exists');
     }
 
+    // Hash password if provided and not already hashed
+    // bcrypt hashes start with $2b$, $2a$, or $2y$
+    const data: any = { ...createUserDto };
+    if (data.password && !data.password.startsWith('$2')) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
+
     const user = await this.prisma.user.create({
-      data: createUserDto,
+      data,
     });
 
     // Emit WebSocket event
@@ -69,6 +77,12 @@ export class UsersService {
     });
   }
 
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email }
+    });
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.findOne(id);
 
@@ -81,9 +95,15 @@ export class UsersService {
       }
     }
 
+    // Hash password if provided (only when updating password directly, not from auth)
+    const data: any = { ...updateUserDto };
+    if (updateUserDto.password) {
+      data.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data,
     });
 
     // Emit WebSocket event

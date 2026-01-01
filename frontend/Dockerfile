@@ -21,9 +21,11 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # ビルド時の環境変数を受け取る
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ARG NEXT_PUBLIC_AUTH_ENABLED=true
 
 # 環境変数をENVとして設定（Next.jsビルド時にインライン化される）
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_AUTH_ENABLED=${NEXT_PUBLIC_AUTH_ENABLED}
 
 # プロダクションビルド
 RUN npm run build

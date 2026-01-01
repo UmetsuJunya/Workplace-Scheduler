@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { LocationPresetsService } from './location-presets.service';
 import { CreateLocationPresetDto } from './dto/create-location-preset.dto';
 import { UpdateLocationPresetDto } from './dto/update-location-preset.dto';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @Controller('location-presets')
+@UseGuards(OptionalJwtAuthGuard)
 export class LocationPresetsController {
   constructor(private readonly locationPresetsService: LocationPresetsService) {}
 
