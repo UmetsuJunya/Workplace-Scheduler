@@ -6,6 +6,10 @@ export class UpdateLocationPresetDto {
   name?: string;
 
   @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
   @IsNumber()
   order?: number;
 }

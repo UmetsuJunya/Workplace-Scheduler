@@ -5,6 +5,10 @@ export class CreateLocationPresetDto {
   name: string;
 
   @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
   @IsNumber()
   order?: number;
 }

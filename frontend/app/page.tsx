@@ -41,6 +41,7 @@ import {
   showLocationManagementAtom,
   showProfileEditAtom,
   forceEditModeAtom,
+  locationPresetsAtom,
 } from "../lib/atoms"
 
 export default function Page() {
@@ -75,6 +76,7 @@ export default function Page() {
   const filteredUsers = useAtomValue(filteredUsersAtom)
   const selectedUserName = useAtomValue(selectedUserNameAtom)
   const selectedProjectName = useAtomValue(selectedProjectNameAtom)
+  const locationPresets = useAtomValue(locationPresetsAtom)
 
   const yearMonth = formatYearMonth(currentDate)
 
@@ -193,6 +195,21 @@ export default function Page() {
       setProjects(savedProjects)
     }
     loadData()
+  }, [])
+
+  // Load location presets on mount
+  const setLocationPresets = useSetAtom(locationPresetsAtom)
+
+  useEffect(() => {
+    const loadPresets = async () => {
+      try {
+        const presets = await apiClient.getLocationPresets()
+        setLocationPresets(presets.map((p: any) => ({ id: p.id, name: p.name, color: p.color })))
+      } catch (error) {
+        console.error("Failed to load location presets:", error)
+      }
+    }
+    loadPresets()
   }, [])
 
   // Load users and schedules for current month
@@ -530,6 +547,18 @@ export default function Page() {
     return parts.join("\n")
   }
 
+  // Get background color for a cell based on location preset
+  const getCellBackgroundColor = (value: CellValue | null): string | undefined => {
+    if (!value) return undefined
+
+    // Check AM and PM values for matching location preset
+    const locationName = value.am || value.pm
+    if (!locationName) return undefined
+
+    const preset = locationPresets.find(p => p.name === locationName)
+    return preset?.color
+  }
+
   return (
     <div className="app-container">
       <div className="header">
@@ -783,7 +812,6 @@ export default function Page() {
                       onDragEnd={handleCellDragEnd}
                       className={`grid-cell day-column ${weekend ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""} ${!canEdit ? "non-editable" : ""}`}
                       onClick={() => handleCellClick(user.id, dateISO, user.name)}
-                      style={{ cursor: canEdit ? "pointer" : "default" }}
                       title={
                         bulkEditMode
                           ? selectedUser === user.id
@@ -802,6 +830,7 @@ export default function Page() {
                             ? "grab"
                             : "pointer",
                         opacity: isDragging ? 0.5 : 1,
+                        backgroundColor: getCellBackgroundColor(cellValue),
                       }}
                     >
                       {content && <div className="cell-content">{content}</div>}

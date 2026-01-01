@@ -12,20 +12,33 @@ interface LocationManagementProps {
   onClose: () => void
 }
 
+const COLOR_PRESETS = [
+  { name: "白", value: "#FFFFFF" },
+  { name: "グレー", value: "#E0E0E0" },
+  { name: "薄い赤", value: "#FFCDD2" },
+  { name: "薄い青", value: "#BBDEFB" },
+  { name: "薄い緑", value: "#C8E6C9" },
+  { name: "薄い黄色", value: "#FFF9C4" },
+]
+
 export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose }) => {
   const [locationPresets, setLocationPresets] = useAtom(locationPresetsAtom)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
+  const [editingColor, setEditingColor] = useState("")
   const [newLocationName, setNewLocationName] = useState("")
+  const [newLocationColor, setNewLocationColor] = useState("")
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [showCustomColorPicker, setShowCustomColorPicker] = useState(false)
+  const [showEditCustomColorPicker, setShowEditCustomColorPicker] = useState(false)
 
   // Load location presets from API on mount
   useEffect(() => {
     const loadPresets = async () => {
       try {
         const presets = await apiClient.getLocationPresets()
-        setLocationPresets(presets.map((p: any) => ({ id: p.id, name: p.name })))
+        setLocationPresets(presets.map((p: any) => ({ id: p.id, name: p.name, color: p.color })))
       } catch (error) {
         console.error("Failed to load location presets:", error)
       }
@@ -57,11 +70,13 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
     try {
       const newPreset = await apiClient.createLocationPreset({
         name: newLocationName.trim(),
+        color: newLocationColor === "" ? undefined : newLocationColor,
         order: locationPresets.length,
       })
 
-      setLocationPresets([...locationPresets, { id: newPreset.id, name: newPreset.name }])
+      setLocationPresets([...locationPresets, { id: newPreset.id, name: newPreset.name, color: newPreset.color }])
       setNewLocationName("")
+      setNewLocationColor("")
     } catch (error) {
       console.error("Failed to create location preset:", error)
       alert("勤務地の追加に失敗しました")
@@ -71,21 +86,28 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
   const handleStartEdit = (location: LocationPreset) => {
     setEditingId(location.id)
     setEditingName(location.name)
+    setEditingColor(location.color || "")
+    setShowEditCustomColorPicker(false)
   }
 
   const handleSaveEdit = async () => {
     if (!editingName.trim() || !editingId) return
 
     try {
-      await apiClient.updateLocationPreset(editingId, { name: editingName.trim() })
+      await apiClient.updateLocationPreset(editingId, {
+        name: editingName.trim(),
+        color: editingColor === "" ? undefined : editingColor
+      })
 
       setLocationPresets(
         locationPresets.map((loc) =>
-          loc.id === editingId ? { ...loc, name: editingName.trim() } : loc
+          loc.id === editingId ? { ...loc, name: editingName.trim(), color: editingColor === "" ? undefined : editingColor } : loc
         )
       )
       setEditingId(null)
       setEditingName("")
+      setEditingColor("")
+      setShowEditCustomColorPicker(false)
     } catch (error) {
       console.error("Failed to update location preset:", error)
       alert("勤務地の更新に失敗しました")
@@ -95,6 +117,8 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditingName("")
+    setEditingColor("")
+    setShowEditCustomColorPicker(false)
   }
 
   const handleDeleteLocation = async (id: string) => {
@@ -195,7 +219,7 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
         className="modal"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: "600px",
+          maxWidth: "750px",
           maxHeight: "90vh",
           display: "flex",
           flexDirection: "column",
@@ -211,7 +235,7 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
           {/* 新規追加フォーム */}
           <div className="form-group" style={{ marginBottom: "20px" }}>
             <label>新しい勤務地を追加</label>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <input
                 type="text"
                 value={newLocationName}
@@ -225,6 +249,144 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
                 }}
                 style={{ flex: 1 }}
               />
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={{ fontSize: "12px", margin: 0 }}>背景色:</label>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                  {COLOR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.value}
+                      onClick={() => {
+                        setNewLocationColor(preset.value)
+                        setShowCustomColorPicker(false)
+                      }}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        backgroundColor: preset.value,
+                        border: newLocationColor === preset.value ? "3px solid #0070f3" : "1px solid #ddd",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                      title={preset.name}
+                      type="button"
+                    />
+                  ))}
+                  <button
+                    onClick={() => setShowCustomColorPicker(!showCustomColorPicker)}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      background: "white",
+                      border: showCustomColorPicker ? "3px solid #0070f3" : "2px solid #999",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      color: "#666",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                    title="カスタムカラー"
+                    type="button"
+                  >
+                    <span style={{ position: "relative", zIndex: 1 }}>🎨</span>
+                    <div style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: "4px",
+                      background: "linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                    }} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNewLocationColor("")
+                      setShowCustomColorPicker(false)
+                    }}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                      background: "white",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: newLocationColor ? 1 : 0,
+                      pointerEvents: newLocationColor ? "auto" : "none",
+                    }}
+                    title="色をクリア"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {showCustomColorPicker && (
+                  <div style={{
+                    marginTop: "8px",
+                    padding: "12px",
+                    background: "#f9f9f9",
+                    borderRadius: "8px",
+                    border: "1px solid #ddd"
+                  }}>
+                    <div style={{ fontSize: "12px", fontWeight: "600", marginBottom: "8px", color: "#333" }}>
+                      カスタムカラーを選択
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <input
+                        type="color"
+                        value={newLocationColor || "#ffffff"}
+                        onChange={(e) => setNewLocationColor(e.target.value)}
+                        style={{
+                          width: "80px",
+                          height: "40px",
+                          border: "2px solid #999",
+                          borderRadius: "6px",
+                          cursor: "pointer"
+                        }}
+                        title="カスタムカラーを選択"
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px"
+                        }}>
+                          <div style={{
+                            width: "40px",
+                            height: "40px",
+                            backgroundColor: newLocationColor || "#ffffff",
+                            border: "2px solid #ddd",
+                            borderRadius: "6px",
+                            flexShrink: 0
+                          }} />
+                          <div style={{ flexShrink: 0 }}>
+                            <div style={{ fontSize: "11px", color: "#666", whiteSpace: "nowrap" }}>選択中の色</div>
+                            <div style={{ fontSize: "13px", fontWeight: "600", fontFamily: "monospace", whiteSpace: "nowrap", width: "70px" }}>
+                              {newLocationColor || "#FFFFFF"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => setShowCustomColorPicker(false)}
+                        type="button"
+                      >
+                        決定
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <button className="btn btn-primary" onClick={handleAddLocation} disabled={!newLocationName.trim()}>
                 追加
               </button>
@@ -349,13 +511,145 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
                           style={{ flex: 1 }}
                           autoFocus
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
+                            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
                               handleSaveEdit()
                             } else if (e.key === "Escape") {
                               handleCancelEdit()
                             }
                           }}
                         />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                            {COLOR_PRESETS.map((preset) => (
+                              <button
+                                key={preset.value}
+                                onClick={() => {
+                                  setEditingColor(preset.value)
+                                  setShowEditCustomColorPicker(false)
+                                }}
+                                style={{
+                                  width: "28px",
+                                  height: "28px",
+                                  backgroundColor: preset.value,
+                                  border: editingColor === preset.value ? "3px solid #0070f3" : "1px solid #ddd",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  padding: 0,
+                                }}
+                                title={preset.name}
+                                type="button"
+                              />
+                            ))}
+                            <button
+                              onClick={() => setShowEditCustomColorPicker(!showEditCustomColorPicker)}
+                              style={{
+                                width: "28px",
+                                height: "28px",
+                                background: "white",
+                                border: showEditCustomColorPicker ? "3px solid #0070f3" : "2px solid #999",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                padding: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "14px",
+                                fontWeight: "bold",
+                                color: "#666",
+                                position: "relative",
+                                overflow: "hidden",
+                              }}
+                              title="カスタムカラー"
+                              type="button"
+                            >
+                              <span style={{ position: "relative", zIndex: 1 }}>🎨</span>
+                              <div style={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: "3px",
+                                background: "linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                              }} />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingColor("")
+                                setShowEditCustomColorPicker(false)
+                              }}
+                              style={{
+                                width: "28px",
+                                height: "28px",
+                                border: "1px solid #ddd",
+                                borderRadius: "4px",
+                                background: "white",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                opacity: editingColor ? 1 : 0,
+                                pointerEvents: editingColor ? "auto" : "none",
+                              }}
+                              title="色をクリア"
+                              type="button"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          {showEditCustomColorPicker && (
+                            <div style={{
+                              marginTop: "8px",
+                              padding: "12px",
+                              background: "#f9f9f9",
+                              borderRadius: "8px",
+                              border: "1px solid #ddd"
+                            }}>
+                              <div style={{ fontSize: "12px", fontWeight: "600", marginBottom: "8px", color: "#333" }}>
+                                カスタムカラーを選択
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <input
+                                  type="color"
+                                  value={editingColor || "#ffffff"}
+                                  onChange={(e) => setEditingColor(e.target.value)}
+                                  style={{
+                                    width: "80px",
+                                    height: "40px",
+                                    border: "2px solid #999",
+                                    borderRadius: "6px",
+                                    cursor: "pointer"
+                                  }}
+                                />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <div style={{
+                                      width: "40px",
+                                      height: "40px",
+                                      backgroundColor: editingColor || "#ffffff",
+                                      border: "2px solid #ddd",
+                                      borderRadius: "6px",
+                                      flexShrink: 0
+                                    }} />
+                                    <div style={{ flexShrink: 0 }}>
+                                      <div style={{ fontSize: "11px", color: "#666", whiteSpace: "nowrap" }}>選択中の色</div>
+                                      <div style={{ fontSize: "13px", fontWeight: "600", fontFamily: "monospace", whiteSpace: "nowrap", width: "70px" }}>
+                                        {editingColor || "#FFFFFF"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <button
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() => setShowEditCustomColorPicker(false)}
+                                  type="button"
+                                >
+                                  決定
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <button className="btn btn-sm btn-primary" onClick={handleSaveEdit}>
                           保存
                         </button>
@@ -366,7 +660,27 @@ export const LocationManagement: React.FC<LocationManagementProps> = ({ onClose 
                     ) : (
                       <>
                         {/* 表示モード */}
-                        <div style={{ flex: 1, fontWeight: "500" }}>{location.name}</div>
+                        <div style={{
+                          flex: 1,
+                          fontWeight: "500",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px"
+                        }}>
+                          {location.color && (
+                            <div
+                              style={{
+                                width: "20px",
+                                height: "20px",
+                                backgroundColor: location.color,
+                                border: "1px solid #ddd",
+                                borderRadius: "4px"
+                              }}
+                              title={`背景色: ${location.color}`}
+                            />
+                          )}
+                          <span>{location.name}</span>
+                        </div>
                         <button className="btn btn-sm" onClick={() => handleStartEdit(location)}>
                           編集
                         </button>

@@ -647,8 +647,12 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-.grid-cell.selected {
-  background: #e3f2fd !important;
+.grid-cell.selected:not([style*="backgroundColor"]) {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+
+.grid-cell.selected[style*="backgroundColor"] {
   border: 2px solid #2196f3;
 }
 
@@ -778,16 +782,16 @@
   background: #fef9f8;
 }
 
-.grid-cell.has-content {
+.grid-cell.has-content:not([style*="backgroundColor"]) {
   background: #f0f9ff;
 }
 
-.grid-cell.weekend.has-content {
+.grid-cell.weekend.has-content:not([style*="backgroundColor"]) {
   background: #fef3f2;
 }
 
-.grid-cell:hover {
-  background: #e3f2fd !important;
+.grid-cell:hover:not([style*="backgroundColor"]) {
+  background: #e3f2fd;
   transform: scale(1.02);
   transition: all 0.15s;
 }
@@ -880,8 +884,8 @@
   transition: background 0.2s;
 }
 
-.grid-cell.selectable:hover {
-  background: #e3f2fd !important;
+.grid-cell.selectable:hover:not([style*="backgroundColor"]) {
+  background: #e3f2fd;
 }
 
 /* Drag and drop styles for calendar entries */
@@ -891,9 +895,12 @@
 }
 
 .grid-cell.drag-over {
-  background: #f0f9ff !important;
   border: 2px dashed #0070f3;
   transform: scale(1.02);
+}
+
+.grid-cell.drag-over:not([style*="backgroundColor"]) {
+  background: #f0f9ff;
 }
 
 .grid-cell.has-content:not(.dragging) {

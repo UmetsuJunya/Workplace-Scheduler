@@ -232,14 +232,14 @@ class ApiClient {
     return this.request<any[]>('/location-presets');
   }
 
-  async createLocationPreset(data: { name: string; order?: number }) {
+  async createLocationPreset(data: { name: string; color?: string; order?: number }) {
     return this.request<any>('/location-presets', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateLocationPreset(id: string, data: { name?: string; order?: number }) {
+  async updateLocationPreset(id: string, data: { name?: string; color?: string; order?: number }) {
     return this.request<any>(`/location-presets/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

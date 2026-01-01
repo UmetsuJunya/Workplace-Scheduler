@@ -25,6 +25,7 @@ export interface MonthData {
 export interface LocationPreset {
   id: string
   name: string
+  color?: string
 }
 
 export const DEFAULT_LOCATION_PRESETS: LocationPreset[] = [
