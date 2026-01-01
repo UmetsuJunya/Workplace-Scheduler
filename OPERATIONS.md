@@ -371,6 +371,48 @@ docker network ls
 docker network inspect workplace-scheduler_scheduler-network
 ```
 
+### 背景色が表示されない
+
+勤務地の背景色が正しく表示されない場合：
+
+#### 1. データベースに背景色が保存されているか確認
+
+```bash
+# location_presetsテーブルのcolorフィールドを確認
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "
+SELECT id, name, color
+FROM location_presets
+WHERE color IS NOT NULL;
+"
+```
+
+#### 2. バックエンドAPIから背景色が返されているか確認
+
+```bash
+# APIレスポンスを確認（colorフィールドが含まれているか）
+curl http://localhost:3001/location-presets
+
+# 特定の勤務地プリセットの詳細を確認
+curl http://localhost:3001/location-presets/<preset-id>
+```
+
+#### 3. フロントエンドで背景色が適用されているか確認
+
+- ブラウザの開発者ツールを開く（F12）
+- Elements タブで該当のセル要素を確認
+- `style="background-color: #XXXXXX"` が適用されているか確認
+- CSSで上書きされていないか確認（`:not([style*="backgroundColor"])` セレクタが正しく機能しているか）
+
+#### 4. データを再ロード
+
+```bash
+# ブラウザでページをリロード（Ctrl+R / Cmd+R）
+# またはハードリロード（Ctrl+Shift+R / Cmd+Shift+R）
+
+# フロントエンドコンテナを再起動
+docker-compose restart frontend
+```
+
 ### コンテナのメモリ不足
 
 ```bash
@@ -427,6 +469,23 @@ SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||
 FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+"
+```
+
+#### データベーススキーマの確認
+
+```bash
+# 全テーブルの一覧を確認
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "\dt"
+
+# location_presetsテーブルの構造を確認（背景色フィールドを含む）
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "\d location_presets"
+
+# 勤務地プリセットと背景色の設定状況を確認
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "
+SELECT id, name, color, \"order\", created_at
+FROM location_presets
+ORDER BY \"order\";
 "
 ```
 
@@ -621,6 +680,97 @@ docker image prune -a
 # 未使用のボリュームを削除（注意：データが消える可能性があります）
 docker volume prune
 ```
+
+---
+
+## 機能別の運用ガイド
+
+### 勤務地背景色設定機能
+
+#### 概要
+
+勤務地プリセットに背景色を設定することで、スケジュール画面で視覚的に勤務地を区別できます。
+
+- **プリセット色**: 6つの定義済み色（白、グレー、薄い赤、薄い青、薄い緑、薄い黄色）
+- **カスタムカラー**: 任意の16進数カラーコードを設定可能（例: #FFFFFF, #BBDEFB）
+- **適用範囲**: スケジュール画面のセルに自動的に背景色が反映
+
+#### データベース構造
+
+```sql
+-- location_presets テーブル
+CREATE TABLE location_presets (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  color TEXT,  -- 16進数カラーコード（例: #FFFFFF）
+  "order" INTEGER NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
+
+#### 背景色データの確認と修正
+
+```bash
+# 1. 現在の背景色設定を確認
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "
+SELECT name, color, \"order\"
+FROM location_presets
+ORDER BY \"order\";
+"
+
+# 2. 特定の勤務地の背景色を更新（SQL経由）
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "
+UPDATE location_presets
+SET color = '#BBDEFB', updated_at = NOW()
+WHERE name = 'オフィス';
+"
+
+# 3. 背景色を削除（デフォルトに戻す）
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "
+UPDATE location_presets
+SET color = NULL, updated_at = NOW()
+WHERE name = 'オフィス';
+"
+
+# 4. 全ての勤務地の背景色をリセット
+docker exec workplace-scheduler-postgres psql -U postgres -d workplace_scheduler -c "
+UPDATE location_presets
+SET color = NULL, updated_at = NOW();
+"
+```
+
+#### トラブルシューティング
+
+**問題1: 背景色が保存されない**
+
+```bash
+# DTOファイルにcolorフィールドがあるか確認
+docker exec workplace-scheduler-backend cat src/location-presets/dto/create-location-preset.dto.ts
+docker exec workplace-scheduler-backend cat src/location-presets/dto/update-location-preset.dto.ts
+
+# バックエンドログでバリデーションエラーを確認
+docker logs workplace-scheduler-backend | grep -i "validation"
+```
+
+**問題2: 背景色がスケジュール画面に反映されない**
+
+```bash
+# 1. フロントエンドがlocation presetsを読み込んでいるか確認
+# ブラウザの開発者ツール > Network タブで /location-presets APIリクエストを確認
+
+# 2. レスポンスにcolorフィールドが含まれているか確認
+curl http://localhost:3001/location-presets | jq '.[].color'
+
+# 3. フロントエンドキャッシュをクリア
+# ブラウザでハードリロード（Ctrl+Shift+R / Cmd+Shift+R）
+```
+
+**問題3: CSS が背景色を上書きしている**
+
+- ブラウザの開発者ツールで要素を検査
+- `globals.css` の `:not([style*="backgroundColor"])` セレクタが正しく適用されているか確認
+- インラインスタイルが設定されているのに背景色が表示されない場合は、CSSの優先順位を確認
 
 ---
 

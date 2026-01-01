@@ -353,6 +353,7 @@ Response:
   {
     "id": "uuid",
     "name": "オフィス",
+    "color": "#BBDEFB",
     "order": 0,
     "createdAt": "2025-01-01T00:00:00.000Z",
     "updatedAt": "2025-01-01T00:00:00.000Z"
@@ -367,8 +368,12 @@ Content-Type: application/json
 
 {
   "name": "在宅",
+  "color": "#C8E6C9",
   "order": 1
 }
+
+// colorフィールドは省略可能
+// 指定する場合は16進数カラーコード（例: #FFFFFF, #BBDEFB）
 ```
 
 #### 勤務地プリセット並び替え
@@ -387,8 +392,11 @@ PATCH /location-presets/:id
 Content-Type: application/json
 
 {
-  "name": "新しい勤務地名"
+  "name": "新しい勤務地名",
+  "color": "#FFCDD2"
 }
+
+// nameとcolorは両方省略可能
 ```
 
 #### 勤務地プリセット削除
@@ -495,6 +503,7 @@ Prismaスキーマファイル: `backend/prisma/schema.prisma`
 #### LocationPresets テーブル
 - id (UUID, Primary Key)
 - name (String)
+- color (String, Nullable) - 16進数カラーコード（例: #FFFFFF, #BBDEFB）
 - order (Number)
 - createdAt (DateTime)
 - updatedAt (DateTime)
