@@ -547,16 +547,17 @@ export default function Page() {
     return parts.join("\n")
   }
 
-  // Get background color for a cell based on location preset
-  const getCellBackgroundColor = (value: CellValue | null): string | undefined => {
-    if (!value) return undefined
+  // Get background colors for a cell based on location preset
+  const getCellBackgroundColors = (value: CellValue | null): { am: string | undefined; pm: string | undefined; hasSplit: boolean } => {
+    if (!value) return { am: undefined, pm: undefined, hasSplit: false }
 
-    // Check AM and PM values for matching location preset
-    const locationName = value.am || value.pm
-    if (!locationName) return undefined
+    const amColor = value.am ? locationPresets.find(p => p.name === value.am)?.color : undefined
+    const pmColor = value.pm ? locationPresets.find(p => p.name === value.pm)?.color : undefined
 
-    const preset = locationPresets.find(p => p.name === locationName)
-    return preset?.color
+    // Check if we have different AM and PM values with colors
+    const hasSplit = value.am && value.pm && value.am !== value.pm && (amColor || pmColor)
+
+    return { am: amColor, pm: pmColor, hasSplit: !!hasSplit }
   }
 
   return (
@@ -793,13 +794,17 @@ export default function Page() {
                   const isSelected = selectedUser === user.id && selectedDates.has(dateISO)
                   const isDragging = draggedEntry?.userId === user.id && draggedEntry?.dateISO === dateISO
                   const isDragOver = dragOverCell?.userId === user.id && dragOverCell?.dateISO === dateISO
-                  const canDrop = draggedEntry?.userId === user.id && !bulkEditMode
                   const isSelectableInBulkMode = bulkEditMode && selectedUser === user.id
 
                   // Check if this cell is editable by the current user
                   const canEdit = (!AUTH_ENABLED || !currentUser) ||
                                   (isAdmin && forceEditMode) ||
                                   user.id === currentUser?.id
+
+                  // Get background colors for AM/PM split
+                  const bgColors = getCellBackgroundColors(cellValue)
+                  const hasUniformColor = bgColors.am && bgColors.pm && bgColors.am === bgColors.pm
+                  const singleColor = hasUniformColor ? bgColors.am : (bgColors.am || bgColors.pm)
 
                   return (
                     <div
@@ -810,7 +815,7 @@ export default function Page() {
                       onDragLeave={handleCellDragLeave}
                       onDrop={(e) => canEdit && handleCellDrop(e, user.id, dateISO)}
                       onDragEnd={handleCellDragEnd}
-                      className={`grid-cell day-column ${weekend ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""} ${!canEdit ? "non-editable" : ""}`}
+                      className={`grid-cell day-column ${weekend ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""} ${!canEdit ? "non-editable" : ""} ${bgColors.hasSplit ? "split-background" : ""}`}
                       onClick={() => handleCellClick(user.id, dateISO, user.name)}
                       title={
                         bulkEditMode
@@ -830,9 +835,15 @@ export default function Page() {
                             ? "grab"
                             : "pointer",
                         opacity: isDragging ? 0.5 : 1,
-                        backgroundColor: getCellBackgroundColor(cellValue),
+                        backgroundColor: !bgColors.hasSplit ? singleColor : undefined,
                       }}
                     >
+                      {bgColors.hasSplit && (
+                        <>
+                          <div className="cell-bg-am" style={{ backgroundColor: bgColors.am }} />
+                          <div className="cell-bg-pm" style={{ backgroundColor: bgColors.pm }} />
+                        </>
+                      )}
                       {content && <div className="cell-content">{content}</div>}
                     </div>
                   )

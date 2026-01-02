@@ -757,6 +757,36 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  position: relative;
+}
+
+/* AM/PM split background styles */
+.grid-cell.split-background {
+  padding: 0;
+  overflow: hidden;
+}
+
+.grid-cell.split-background .cell-bg-am,
+.grid-cell.split-background .cell-bg-pm {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  left: 0;
+  z-index: 0;
+}
+
+.grid-cell.split-background .cell-bg-am {
+  top: 0;
+}
+
+.grid-cell.split-background .cell-bg-pm {
+  bottom: 0;
+}
+
+.grid-cell.split-background .cell-content {
+  position: relative;
+  z-index: 1;
+  padding: 8px;
 }
 
 .grid-cell.user-column {

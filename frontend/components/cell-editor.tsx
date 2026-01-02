@@ -41,10 +41,18 @@ export const CellEditor: React.FC<CellEditorProps> = ({
     }
   }, [])
 
-  const [fullDayMode, setFullDayMode] = useState<boolean>(true)
+  const [fullDayMode, setFullDayMode] = useState<boolean>(() => {
+    // AMとPMが異なる場合はAM/PMモードで開く
+    if (value?.am && value?.pm && value.am !== value.pm) return false
+    // それ以外（同じ値、片方のみ、または両方なし）は1日全体モードで開く
+    return true
+  })
   const [fullDayValue, setFullDayValue] = useState<string>(() => {
     // AMとPMが同じ場合はその値を使用
     if (value?.am === value?.pm && value?.am) return value.am
+    // どちらか一方のみの場合はその値を使用
+    if (value?.am && !value?.pm) return value.am
+    if (value?.pm && !value?.am) return value.pm
     return ""
   })
   const [am, setAm] = useState<string>(value?.am || "")
