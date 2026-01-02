@@ -694,9 +694,9 @@
   display: flex;
   position: sticky;
   top: 0;
-  background: #f8f9fa;
+  background: #e8f4f8;
   z-index: 10;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid #b0d4e3;
 }
 
 .header-cell {
@@ -713,7 +713,7 @@
   width: 150px;
   position: sticky;
   left: 0;
-  background: #f8f9fa;
+  background: #e8f4f8;
   z-index: 11;
   text-align: left;
   padding-left: 16px;
@@ -724,7 +724,7 @@
 }
 
 .header-cell.weekend {
-  background: #fef3f2;
+  background: #fee;
 }
 
 .day-of-week {
