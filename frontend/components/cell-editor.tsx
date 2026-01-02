@@ -68,7 +68,7 @@ export const CellEditor: React.FC<CellEditorProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose()
-      } else if (e.key === "Enter" && !e.shiftKey) {
+      } else if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
         handleSave()
       }
     }
