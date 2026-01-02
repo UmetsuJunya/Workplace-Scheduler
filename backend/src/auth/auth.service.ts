@@ -1,8 +1,14 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { RegisterDto } from './dto/register.dto';
+import { UserWithoutPassword, LoginResponse } from './interfaces';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +18,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(emailOrName: string, password: string): Promise<any> {
+  async validateUser(emailOrName: string, password: string): Promise<UserWithoutPassword> {
     // Try to find user by email first, then by name
     let user = await this.usersService.findByEmail(emailOrName);
     if (!user) {
@@ -33,7 +39,7 @@ export class AuthService {
     return result;
   }
 
-  async login(user: any) {
+  async login(user: UserWithoutPassword): Promise<LoginResponse> {
     const payload = { name: user.name, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
@@ -46,23 +52,26 @@ export class AuthService {
     };
   }
 
-  async register(name: string, email: string, password: string) {
-    const authEnabled = this.configService.get<string>('AUTH_ENABLED') === 'true';
+  async register(registerDto: RegisterDto) {
+    const authEnabled =
+      this.configService.get<string>('AUTH_ENABLED') === 'true';
     const users = await this.usersService.findAll();
 
     // If AUTH is enabled, only allow registration when there are no users
     if (authEnabled && users.length > 0) {
-      throw new ForbiddenException('Registration is closed. Please contact an administrator.');
+      throw new ForbiddenException(
+        'Registration is closed. Please contact an administrator.',
+      );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     // First user is always admin
     const role = users.length === 0 ? 'ADMIN' : 'USER';
 
     const user = await this.usersService.create({
-      name,
-      email,
+      name: registerDto.name,
+      email: registerDto.email,
       password: hashedPassword,
       role,
     });
@@ -72,7 +81,8 @@ export class AuthService {
   }
 
   async canRegister(): Promise<boolean> {
-    const authEnabled = this.configService.get<string>('AUTH_ENABLED') === 'true';
+    const authEnabled =
+      this.configService.get<string>('AUTH_ENABLED') === 'true';
 
     if (!authEnabled) {
       return false; // When auth is disabled, no signup page needed

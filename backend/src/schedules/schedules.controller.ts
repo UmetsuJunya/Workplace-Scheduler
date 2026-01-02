@@ -4,6 +4,7 @@ import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { OwnScheduleOrAdminGuard } from '../auth/guards/own-schedule-or-admin.guard';
+import { AuthenticatedUser } from '../auth/interfaces';
 
 @Controller('schedules')
 @UseGuards(OptionalJwtAuthGuard)
@@ -12,13 +13,13 @@ export class SchedulesController {
 
   @Post()
   @UseGuards(OwnScheduleOrAdminGuard)
-  create(@Body() createScheduleDto: CreateScheduleDto, @Request() req: any) {
+  create(@Body() createScheduleDto: CreateScheduleDto) {
     return this.schedulesService.create(createScheduleDto);
   }
 
   @Post('bulk')
   @UseGuards(OwnScheduleOrAdminGuard)
-  bulkCreate(@Body() schedules: CreateScheduleDto[], @Request() req: any) {
+  bulkCreate(@Body() schedules: CreateScheduleDto[]) {
     return this.schedulesService.bulkCreate(schedules);
   }
 
@@ -42,14 +43,21 @@ export class SchedulesController {
 
   @Patch(':id')
   @UseGuards(OwnScheduleOrAdminGuard)
-  update(@Param('id') id: string, @Body() updateScheduleDto: UpdateScheduleDto, @Request() req: any) {
+  update(
+    @Param('id') id: string,
+    @Body() updateScheduleDto: UpdateScheduleDto,
+    @Request() req: Request & { user?: AuthenticatedUser },
+  ) {
     return this.schedulesService.update(id, updateScheduleDto, req.user);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @UseGuards(OwnScheduleOrAdminGuard)
-  remove(@Param('id') id: string, @Request() req: any) {
+  remove(
+    @Param('id') id: string,
+    @Request() req: Request & { user?: AuthenticatedUser },
+  ) {
     return this.schedulesService.remove(id, req.user);
   }
 }

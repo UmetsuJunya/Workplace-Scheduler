@@ -2,8 +2,9 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
-
 import { EventsGateway } from '../events/events.gateway';
+import { AuthenticatedUser } from '../auth/interfaces';
+import { ScheduleUpdateData } from './interfaces';
 @Injectable()
 export class SchedulesService {
   constructor(
@@ -87,7 +88,7 @@ export class SchedulesService {
     return schedule;
   }
 
-  async update(id: string, updateScheduleDto: UpdateScheduleDto, user?: any) {
+  async update(id: string, updateScheduleDto: UpdateScheduleDto, user?: AuthenticatedUser) {
     const schedule = await this.findOne(id); // Check if schedule exists
 
     // Check ownership if user is provided and not an admin
@@ -95,7 +96,11 @@ export class SchedulesService {
       throw new ForbiddenException('You can only update your own schedules');
     }
 
-    const updateData: any = { ...updateScheduleDto };
+    const updateData: ScheduleUpdateData = {
+      am: updateScheduleDto.am,
+      pm: updateScheduleDto.pm,
+      note: updateScheduleDto.note,
+    };
     if (updateScheduleDto.date) {
       updateData.date = new Date(updateScheduleDto.date);
     }
@@ -112,7 +117,7 @@ export class SchedulesService {
     return updatedSchedule;
   }
 
-  async remove(id: string, user?: any) {
+  async remove(id: string, user?: AuthenticatedUser) {
     const schedule = await this.findOne(id); // Check if schedule exists
 
     // Check ownership if user is provided and not an admin

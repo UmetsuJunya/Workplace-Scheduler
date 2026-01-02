@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { LocationPresetsService } from './location-presets.service';
 import { CreateLocationPresetDto } from './dto/create-location-preset.dto';
 import { UpdateLocationPresetDto } from './dto/update-location-preset.dto';
+import { ReorderLocationPresetDto } from './dto/reorder-location-preset.dto';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @Controller('location-presets')
@@ -15,8 +16,8 @@ export class LocationPresetsController {
   }
 
   @Post('reorder')
-  reorder(@Body() body: { ids: string[] }) {
-    return this.locationPresetsService.reorder(body.ids);
+  reorder(@Body() reorderDto: ReorderLocationPresetDto) {
+    return this.locationPresetsService.reorder(reorderDto.ids);
   }
 
   @Get()

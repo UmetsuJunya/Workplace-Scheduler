@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { SelfOrAdminGuard } from '../auth/guards/self-or-admin.guard';
+import { AuthenticatedUser } from '../auth/interfaces';
 
 @Controller('users')
 @UseGuards(OptionalJwtAuthGuard)
@@ -29,7 +30,11 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(SelfOrAdminGuard)
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Request() req: any) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req: Request & { user?: AuthenticatedUser },
+  ) {
     // Prevent non-admin users from changing their role
     if (updateUserDto.role && req.user?.role !== 'ADMIN') {
       throw new ForbiddenException('Only administrators can change user roles');

@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AuthenticatedUser } from '../interfaces';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -14,7 +15,7 @@ export class AdminGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const user = request.user as AuthenticatedUser | undefined;
 
     if (!user) {
       throw new ForbiddenException('User not authenticated');
