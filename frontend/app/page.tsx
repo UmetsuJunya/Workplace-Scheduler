@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import type { CellValue, User, MonthData, Project } from "../lib/types"
 import { saveMonthData, loadMonthData, saveProjects, loadProjects, loadUsers } from "../lib/storage-adapter"
-import { formatYearMonth, formatDateISO, getDaysInMonth, getDayOfWeek, isWeekend } from "../lib/utils"
+import { formatYearMonth, formatDateISO, getDaysInMonth, getDayOfWeek, isWeekend, isHoliday, getHolidayName } from "../lib/utils"
 import { CellEditor } from "../components/cell-editor"
 import { UserManagement } from "../components/user-management"
 import { ProjectManagement } from "../components/project-management"
@@ -781,14 +781,18 @@ export default function Page() {
               const dateISO = formatDateISO(year, month, day)
               const dayOfWeek = getDayOfWeek(year, month, day)
               const weekend = isWeekend(year, month, day)
+              const holiday = isHoliday(year, month, day)
+              const holidayName = getHolidayName(year, month, day)
               return (
                 <div
                   key={dateISO}
-                  className={`header-cell day-column ${weekend ? "weekend" : ""}`}
+                  className={`header-cell day-column ${weekend || holiday ? "weekend" : ""}`}
                   style={{ cursor: "default" }}
+                  title={holidayName || undefined}
                 >
                   {day}
                   <div className="day-of-week">({dayOfWeek})</div>
+                  {holidayName && <div className="holiday-name">{holidayName}</div>}
                 </div>
               )
             })}
@@ -808,6 +812,7 @@ export default function Page() {
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                   const dateISO = formatDateISO(year, month, day)
                   const weekend = isWeekend(year, month, day)
+                  const holiday = isHoliday(year, month, day)
                   const cellValue = entries[user.id]?.[dateISO] || null
                   const content = renderCellContent(cellValue)
                   const isSelected = selectedUser === user.id && selectedDates.has(dateISO)
@@ -834,7 +839,7 @@ export default function Page() {
                       onDragLeave={handleCellDragLeave}
                       onDrop={(e) => canEdit && handleCellDrop(e, user.id, dateISO)}
                       onDragEnd={handleCellDragEnd}
-                      className={`grid-cell day-column ${weekend ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""} ${!canEdit ? "non-editable" : ""} ${bgColors.hasSplit ? "split-background" : ""}`}
+                      className={`grid-cell day-column ${weekend || holiday ? "weekend" : ""} ${content ? "has-content" : ""} ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDragOver ? "drag-over" : ""} ${isSelectableInBulkMode ? "selectable" : ""} ${!canEdit ? "non-editable" : ""} ${bgColors.hasSplit ? "split-background" : ""}`}
                       onClick={() => handleCellClick(user.id, dateISO, user.name)}
                       title={
                         bulkEditMode

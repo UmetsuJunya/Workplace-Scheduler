@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import HolidayJp from "@holiday-jp/holiday_jp"
 
 export const formatYearMonth = (date: Date): string => {
   const year = date.getFullYear()
@@ -27,6 +28,17 @@ export const isWeekend = (year: number, month: number, day: number): boolean => 
   const date = new Date(year, month - 1, day)
   const dayOfWeek = date.getDay()
   return dayOfWeek === 0 || dayOfWeek === 6
+}
+
+export const isHoliday = (year: number, month: number, day: number): boolean => {
+  const date = new Date(year, month - 1, day)
+  return HolidayJp.isHoliday(date)
+}
+
+export const getHolidayName = (year: number, month: number, day: number): string | null => {
+  const date = new Date(year, month - 1, day)
+  const holiday = HolidayJp.between(date, date)[0]
+  return holiday ? holiday.name : null
 }
 
 export const generateUserId = (): string => {

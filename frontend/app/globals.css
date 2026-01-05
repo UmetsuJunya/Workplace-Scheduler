@@ -736,6 +736,16 @@
   margin-top: 2px;
 }
 
+.holiday-name {
+  font-size: 10px;
+  font-weight: 500;
+  color: #dc2626;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .grid-body {
   display: flex;
   flex-direction: column;
