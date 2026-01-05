@@ -163,10 +163,20 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, onUsersCh
   if (AUTH_ENABLED) {
     return (
       <div className="modal-overlay" onClick={handleClose}>
-        <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px" }}>
+        <div
+          className="modal"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: "800px",
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden"
+          }}
+        >
           <h2>ユーザー管理</h2>
 
-          <div className="modal-body">
+          <div className="modal-body" style={{ overflowY: "auto", flex: 1 }}>
             {/* User List Table */}
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
@@ -462,10 +472,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, onUsersCh
   // Simple UI for AUTH_ENABLED=false
   return (
     <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden"
+        }}
+      >
         <h2>ユーザー管理</h2>
 
-        <div className="modal-body">
+        <div className="modal-body" style={{ overflowY: "auto", flex: 1 }}>
           <div className="user-list">
             {editingUsers.map((user) => (
               <div key={user.id} className="user-item">
