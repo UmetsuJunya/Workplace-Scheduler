@@ -62,6 +62,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, onUsersCh
       return
     }
 
+    if (createForm.password.trim().length < 6) {
+      alert("パスワードは6文字以上である必要があります")
+      return
+    }
+
     try {
       const newUser = await apiClient.createUser({
         name: createForm.name.trim(),
@@ -130,6 +135,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ users, onUsersCh
   const handleResetPassword = async () => {
     if (!resetPasswordUserId || !resetPasswordValue.trim()) {
       alert("パスワードを入力してください")
+      return
+    }
+
+    if (resetPasswordValue.trim().length < 6) {
+      alert("パスワードは6文字以上である必要があります")
       return
     }
 

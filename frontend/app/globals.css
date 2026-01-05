@@ -694,9 +694,9 @@
   display: flex;
   position: sticky;
   top: 0;
-  background: #e8f4f8;
+  background: #ffffff;
   z-index: 10;
-  border-bottom: 2px solid #b0d4e3;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .header-cell {
@@ -713,10 +713,12 @@
   width: 150px;
   position: sticky;
   left: 0;
-  background: #e8f4f8;
+  background: #ffffff;
   z-index: 11;
   text-align: left;
   padding-left: 16px;
+  display: flex;
+  align-items: center;
 }
 
 .header-cell.day-column {
@@ -724,7 +726,7 @@
 }
 
 .header-cell.weekend {
-  background: #fee;
+  background: #fef3f2;
 }
 
 .day-of-week {
@@ -757,36 +759,6 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  position: relative;
-}
-
-/* AM/PM split background styles */
-.grid-cell.split-background {
-  padding: 0;
-  overflow: hidden;
-}
-
-.grid-cell.split-background .cell-bg-am,
-.grid-cell.split-background .cell-bg-pm {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-  left: 0;
-  z-index: 0;
-}
-
-.grid-cell.split-background .cell-bg-am {
-  top: 0;
-}
-
-.grid-cell.split-background .cell-bg-pm {
-  bottom: 0;
-}
-
-.grid-cell.split-background .cell-content {
-  position: relative;
-  z-index: 1;
-  padding: 8px;
 }
 
 .grid-cell.user-column {
@@ -1096,4 +1068,16 @@
   padding: 24px;
   color: #999;
   font-size: 14px;
+}
+
+/* Limit select dropdown height - browser specific */
+/* Note: Different browsers handle this differently */
+select {
+  /* For browsers that support it */
+  max-height: 300px;
+}
+
+/* Style for better UX */
+select option {
+  padding: 8px 12px;
 }

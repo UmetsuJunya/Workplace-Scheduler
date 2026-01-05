@@ -122,14 +122,14 @@ class ApiClient {
     return this.request<any>(`/users/${id}`);
   }
 
-  async createUser(data: { name: string; email?: string }) {
+  async createUser(data: { name: string; email?: string; password?: string; role?: 'ADMIN' | 'USER' }) {
     return this.request<any>('/users', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateUser(id: string, data: { name?: string; email?: string }) {
+  async updateUser(id: string, data: { name?: string; email?: string; password?: string; role?: 'ADMIN' | 'USER' }) {
     return this.request<any>(`/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

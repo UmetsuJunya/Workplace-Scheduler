@@ -95,9 +95,10 @@ export class UsersService {
       }
     }
 
-    // Hash password if provided (only when updating password directly, not from auth)
+    // Hash password if provided and not already hashed
+    // bcrypt hashes start with $2b$, $2a$, or $2y$
     const data = { ...updateUserDto };
-    if (updateUserDto.password) {
+    if (updateUserDto.password && !updateUserDto.password.startsWith('$2')) {
       data.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 

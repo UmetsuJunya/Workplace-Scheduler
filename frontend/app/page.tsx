@@ -12,6 +12,7 @@ import { UserManagement } from "../components/user-management"
 import { ProjectManagement } from "../components/project-management"
 import { LocationManagement } from "../components/location-management"
 import { ProfileEdit } from "../components/profile-edit"
+import { CustomSelect } from "../components/custom-select"
 import { wsClient } from "../lib/websocket"
 import { apiClient } from "../lib/api-client"
 import {
@@ -93,6 +94,9 @@ export default function Page() {
 
   // Flag to prevent WebSocket reload during local saves
   const isSavingRef = useRef(false)
+
+  // Ref for management dropdown click-outside detection
+  const managementDropdownRef = useRef<HTMLDivElement>(null)
 
   // Initialize WebSocket connection on mount
   useEffect(() => {
@@ -211,6 +215,20 @@ export default function Page() {
     }
     loadPresets()
   }, [])
+
+  // Close management dropdown when clicking outside
+  useEffect(() => {
+    if (!showManagementMenu) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (managementDropdownRef.current && !managementDropdownRef.current.contains(event.target as Node)) {
+        setShowManagementMenu(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showManagementMenu, setShowManagementMenu])
 
   // Load users and schedules for current month
   useEffect(() => {
@@ -582,18 +600,19 @@ export default function Page() {
 
           {/* フィルター */}
           <div className="control-group">
-            <select
+            <CustomSelect
               value={selectedProjectId || ""}
-              onChange={(e) => setSelectedProjectId(e.target.value || null)}
-              className="select-input"
-            >
-              <option value="">全プロジェクト</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  📁 {project.name} ({project.userIds.length})
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setSelectedProjectId(value || null)}
+              options={[
+                { value: "", label: "全プロジェクト" },
+                ...projects.map((project) => ({
+                  value: project.id,
+                  label: `📁 ${project.name} (${project.userIds.length})`
+                }))
+              ]}
+              placeholder="プロジェクトを選択"
+              maxVisibleItems={10}
+            />
 
             <button
               className={`btn ${selectedUserIds.size > 0 ? "btn-primary" : "btn-secondary"}`}
@@ -617,7 +636,7 @@ export default function Page() {
               ✏️ {bulkEditMode ? "一括編集モード ON" : "一括編集モード"}
             </button>
 
-            <div className="management-dropdown">
+            <div className="management-dropdown" ref={managementDropdownRef}>
               <button className="btn btn-secondary" onClick={() => setShowManagementMenu(!showManagementMenu)}>
                 ⚙️
               </button>

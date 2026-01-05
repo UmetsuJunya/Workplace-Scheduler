@@ -6,6 +6,7 @@ import { useAtom } from 'jotai'
 import { locationPresetsAtom } from '../lib/atoms'
 import type { CellValue } from "../lib/types"
 import { apiClient } from '../lib/api-client'
+import { CustomSelect } from './custom-select'
 
 interface CellEditorProps {
   value: CellValue | null
@@ -193,14 +194,17 @@ export const CellEditor: React.FC<CellEditorProps> = ({
                   autoFocus
                 />
               ) : (
-                <select value={fullDayValue} onChange={(e) => setFullDayValue(e.target.value)} autoFocus>
-                  <option value="">なし</option>
-                  {locationPresets.map((preset) => (
-                    <option key={preset.id} value={preset.name}>
-                      {preset.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fullDayValue}
+                  onChange={setFullDayValue}
+                  options={[
+                    { value: "", label: "なし" },
+                    ...locationPresets.map((preset) => ({ value: preset.name, label: preset.name }))
+                  ]}
+                  placeholder="勤務地を選択"
+                  maxVisibleItems={7}
+                  autoFocus
+                />
               )}
             </div>
           ) : (
@@ -226,14 +230,17 @@ export const CellEditor: React.FC<CellEditorProps> = ({
                     autoFocus
                   />
                 ) : (
-                  <select value={am} onChange={(e) => setAm(e.target.value)} autoFocus>
-                    <option value="">なし</option>
-                    {locationPresets.map((preset) => (
-                      <option key={preset.id} value={preset.name}>
-                        {preset.name}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={am}
+                    onChange={setAm}
+                    options={[
+                      { value: "", label: "なし" },
+                      ...locationPresets.map((preset) => ({ value: preset.name, label: preset.name }))
+                    ]}
+                    placeholder="勤務地を選択"
+                    maxVisibleItems={7}
+                    autoFocus
+                  />
                 )}
               </div>
 
@@ -257,14 +264,16 @@ export const CellEditor: React.FC<CellEditorProps> = ({
                     placeholder="勤務地を入力"
                   />
                 ) : (
-                  <select value={pm} onChange={(e) => setPm(e.target.value)}>
-                    <option value="">なし</option>
-                    {locationPresets.map((preset) => (
-                      <option key={preset.id} value={preset.name}>
-                        {preset.name}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={pm}
+                    onChange={setPm}
+                    options={[
+                      { value: "", label: "なし" },
+                      ...locationPresets.map((preset) => ({ value: preset.name, label: preset.name }))
+                    ]}
+                    placeholder="勤務地を選択"
+                    maxVisibleItems={7}
+                  />
                 )}
               </div>
             </>
