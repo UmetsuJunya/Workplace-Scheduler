@@ -28,6 +28,11 @@ export class UsersService {
       data.password = await bcrypt.hash(data.password, 10);
     }
 
+    // Convert email to lowercase for case-insensitive comparison
+    if (data.email) {
+      data.email = data.email.toLowerCase();
+    }
+
     const user = await this.prisma.user.create({
       data,
     });
@@ -79,7 +84,7 @@ export class UsersService {
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase() }
     });
   }
 
@@ -100,6 +105,11 @@ export class UsersService {
     const data = { ...updateUserDto };
     if (updateUserDto.password && !updateUserDto.password.startsWith('$2')) {
       data.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
+    // Convert email to lowercase for case-insensitive comparison
+    if (data.email) {
+      data.email = data.email.toLowerCase();
     }
 
     const updatedUser = await this.prisma.user.update({

@@ -71,7 +71,7 @@ export class AuthService {
 
     const user = await this.usersService.create({
       name: registerDto.name,
-      email: registerDto.email,
+      email: registerDto.email.toLowerCase(),
       password: hashedPassword,
       role,
     });
